@@ -13,8 +13,8 @@ async def on_ready():
     print(f'We have logged in as {bot.user.name}')
 
 @bot.command(name='echo')
-async def echo(ctx, message):
-    await ctx.send(message)
+async def echo(ctx, *args):
+    await ctx.send(' '.join(args))
 
 @bot.command(name='saymyname')
 async def echo(ctx):
