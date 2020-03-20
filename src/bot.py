@@ -16,4 +16,8 @@ async def on_ready():
 async def echo(ctx, message):
     await ctx.send(message)
 
+@bot.command(name='saymyname')
+async def echo(ctx):
+    await ctx.send(ctx.message.author)
+
 bot.run(TOKEN)
