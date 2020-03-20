@@ -1,2 +1,4 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 /env
+
+# Discord token is in here. Don't push to a public repo!
+src/.env
