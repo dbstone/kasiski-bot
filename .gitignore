@@ -1,4 +1,5 @@
 /env
+/downloads
 
 # Discord token is in here. Don't push to a public repo!
 src/.env
