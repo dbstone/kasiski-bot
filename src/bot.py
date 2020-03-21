@@ -39,8 +39,8 @@ async def music_test(ctx):
 #         filename = 
 #         ctx.voice_client.play(discord.FFmpegOpusAudio('downloads/current.webm'))
 
+# @play_youtube.before_invoke
 @music_test.before_invoke
-@play_youtube.before_invoke
 async def ensure_voice(ctx):
     if not ctx.voice_client:
         if ctx.author.voice:
