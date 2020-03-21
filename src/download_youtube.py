@@ -1,8 +1,5 @@
 from pytube import YouTube 
 
-SAVE_PATH = 'downloads'
-FILENAME = 'current'
-
 def download(url, path, filename):
     try: 
         yt = YouTube(url) 

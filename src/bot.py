@@ -38,7 +38,6 @@ async def music_test(ctx):
 @bot.command(name='play_youtube')
 async def play_youtube(ctx, url):
     if ctx.voice_client:
-        # download song
         download_youtube.download(url, DOWNLOAD_PATH, ctx.guild)
         ctx.voice_client.play(discord.FFmpegOpusAudio(f'{DOWNLOAD_PATH}/{ctx.guild}.webm'))
 
