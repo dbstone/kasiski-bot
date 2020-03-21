@@ -1,26 +1,21 @@
 from pytube import YouTube 
-  
+
 SAVE_PATH = 'downloads'
 FILENAME = 'current'
-  
-#link of the video to be downloaded 
-link="https://www.youtube.com/watch?v=IUGzY-ihqWc"
-  
-try: 
-    #object creation using YouTube which was imported in the beginning 
-    yt = YouTube(link) 
-except: 
-    print("Connection Error") #to handle exception 
 
-best_audio_stream = yt.streams \
-    .filter(only_audio=True) \
-    .order_by('abr')[-1]
-  
-#get the video with the extension and resolution passed in the get() function 
+def download(url, path, filename):
+    try: 
+        yt = YouTube(url) 
+    except: 
+        print('Error connecting to Youtube')
 
-try: 
-    #downloading the video 
-    best_audio_stream.download(output_path=SAVE_PATH, filename=FILENAME)
-except: 
-    print("Some Error!") 
-print('Task Completed!') 
+    best_audio_stream = yt.streams \
+        .filter(only_audio=True) \
+        .order_by('abr')[-1]
+    
+    try: 
+        best_audio_stream.download(output_path=path, filename=f'{filename}')
+    except: 
+        print("Download error!") 
+
+    print('Download completed!') 

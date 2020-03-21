@@ -3,10 +3,13 @@ import os
 import discord
 from discord.ext import commands
 from dotenv import load_dotenv
+import download_youtube
 
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
 PRAC_SERVER = os.getenv('PRAC_SERVER')
+
+DOWNLOAD_PATH = 'downloads'
 
 bot = commands.Bot(command_prefix='!')
 
@@ -32,14 +35,14 @@ async def music_test(ctx):
     if ctx.voice_client:
         ctx.voice_client.play(discord.FFmpegOpusAudio('downloads/music_test.webm'))
 
-# @bot.command(name='play_youtube')
-# async def music_test(ctx):
-#     if ctx.voice_client:
-#         # download song
-#         filename = 
-#         ctx.voice_client.play(discord.FFmpegOpusAudio('downloads/current.webm'))
+@bot.command(name='play_youtube')
+async def play_youtube(ctx, url):
+    if ctx.voice_client:
+        # download song
+        download_youtube.download(url, DOWNLOAD_PATH, ctx.guild)
+        ctx.voice_client.play(discord.FFmpegOpusAudio(f'{DOWNLOAD_PATH}/{ctx.guild}.webm'))
 
-# @play_youtube.before_invoke
+@play_youtube.before_invoke
 @music_test.before_invoke
 async def ensure_voice(ctx):
     if not ctx.voice_client:
@@ -50,6 +53,6 @@ async def ensure_voice(ctx):
     elif ctx.voice_client.is_playing():
         ctx.voice_client.stop()
         if ctx.voice_client.channel != ctx.author.voice.channel:
-            await ctx.author.voice.channel.connect()
+            await ctx.voice_client.move_to(ctx.author.voice.channel)
 
 bot.run(TOKEN)
