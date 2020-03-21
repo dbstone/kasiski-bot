@@ -30,9 +30,17 @@ async def server(ctx):
 @bot.command(name='music_test')
 async def music_test(ctx):
     if ctx.voice_client:
-        ctx.voice_client.play(discord.FFmpegOpusAudio('downloads/current.webm'))
+        ctx.voice_client.play(discord.FFmpegOpusAudio('downloads/music_test.webm'))
+
+# @bot.command(name='play_youtube')
+# async def music_test(ctx):
+#     if ctx.voice_client:
+#         # download song
+#         filename = 
+#         ctx.voice_client.play(discord.FFmpegOpusAudio('downloads/current.webm'))
 
 @music_test.before_invoke
+@play_youtube.before_invoke
 async def ensure_voice(ctx):
     if not ctx.voice_client:
         if ctx.author.voice:
@@ -41,5 +49,7 @@ async def ensure_voice(ctx):
             await ctx.send('You are not connectd to a voice channel.')
     elif ctx.voice_client.is_playing():
         ctx.voice_client.stop()
+        if ctx.voice_client.channel != ctx.author.voice.channel:
+            await ctx.author.voice.channel.connect()
 
 bot.run(TOKEN)
