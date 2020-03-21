@@ -1,4 +1,5 @@
 import os
+import dice
 
 import discord
 from discord.ext import commands
@@ -53,5 +54,13 @@ async def ensure_voice(ctx):
         ctx.voice_client.stop()
         if ctx.voice_client.channel != ctx.author.voice.channel:
             await ctx.voice_client.move_to(ctx.author.voice.channel)
+
+@bot.command(name='r')
+async def roll_dice(ctx, arg):
+    result = dice.roll(arg)
+    total = sum(result)
+    if len(result) == 1:
+        result = result[0]
+    await ctx.send(f'```{result} Total: {total}```')
 
 bot.run(TOKEN)
