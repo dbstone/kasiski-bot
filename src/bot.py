@@ -1,5 +1,6 @@
 import os
 import dice
+import re
 
 import discord
 from discord.ext import commands
@@ -55,12 +56,50 @@ async def ensure_voice(ctx):
         if ctx.voice_client.channel != ctx.author.voice.channel:
             await ctx.voice_client.move_to(ctx.author.voice.channel)
 
+VALID_OPERATORS = '+-'
+
 @bot.command(name='r')
-async def roll_dice(ctx, arg):
-    result = dice.roll(arg)
-    if len(result) > 1:
-        await ctx.send(f'`{result} Total: {sum(result)}`')
-    else:
-        await ctx.send(f'`{result[0]}`')
+async def roll_dice(ctx, *, arg):
+    try:
+        arg = arg.replace(' ', '') # Trim whitespace
+    
+        # collect operators
+        operators = ''
+        for c in arg:
+            if c in VALID_OPERATORS:
+                operators += c
+        
+        elements = re.split('\+|\-', arg) # collect operands
+
+        evaluated_elements = []
+        for element in elements:
+            if element.isnumeric():
+                evaluated_elements.append([int(element)])
+            elif re.match('^\d*d?\d+$', element):
+                result = dice.roll(element)
+                if type(result) is not list:
+                    result = [int(result)]
+                else:
+                    result = [int(i) for i in result]
+                evaluated_elements.append(result)
+            else:
+                await ctx.send('`Malformed input`')
+                return
+        
+        total = 0
+        for i, element in enumerate(evaluated_elements):
+            if i == 0 or operators[i-1] == '+':
+                total += sum(element)
+            elif operators[i-1] == '-':
+                total -= sum(element)
+        
+        out_str = str(evaluated_elements[0])
+        for i, element in enumerate(evaluated_elements[1:]):
+            out_str += ' ' + operators[i]
+            out_str += ' ' + str(element)
+
+        await ctx.send(f'`{out_str} Total: {total}`')
+    except dice.DiceBaseException as e:
+        await ctx.send(f'Error: {e}')
 
 bot.run(TOKEN)
