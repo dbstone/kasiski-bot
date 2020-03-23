@@ -76,11 +76,7 @@ async def roll_dice(ctx, *, arg):
             if element.isnumeric():
                 evaluated_elements.append([int(element)])
             elif re.match('^\d*d?\d+$', element):
-                result = dice.roll(element)
-                if type(result) is not list:
-                    result = [int(result)]
-                else:
-                    result = [int(i) for i in result]
+                result = [int(i) for i in dice.roll(element)]
                 evaluated_elements.append(result)
             else:
                 await ctx.send('`Malformed input`')
