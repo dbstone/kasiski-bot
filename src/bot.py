@@ -91,9 +91,9 @@ async def roll_dice(ctx, *, arg):
                 total -= sum(element)
         
         if len(evaluated_elements[0]) > 100:
-            out_str = ' [...]'
+            out_str = '[...]'
         else:
-            out_str = ' ' + str(evaluated_elements[0])
+            out_str = str(evaluated_elements[0])
 
         for i, element in enumerate(evaluated_elements[1:]):
             out_str += ' ' + operators[i]
