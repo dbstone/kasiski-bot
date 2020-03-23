@@ -58,9 +58,9 @@ async def ensure_voice(ctx):
 @bot.command(name='r')
 async def roll_dice(ctx, arg):
     result = dice.roll(arg)
-    total = sum(result)
-    if len(result) == 1:
-        result = result[0]
-    await ctx.send(f'```{result} Total: {total}```')
+    if len(result) > 1:
+        await ctx.send(f'`{result} Total: {sum(result)}`')
+    else:
+        await ctx.send(f'`{result[0]}`')
 
 bot.run(TOKEN)
