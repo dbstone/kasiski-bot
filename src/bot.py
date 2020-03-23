@@ -57,6 +57,7 @@ async def ensure_voice(ctx):
             await ctx.voice_client.move_to(ctx.author.voice.channel)
 
 VALID_OPERATORS = '+-'
+MAX_MESSAGE_LEN = 2000
 
 @bot.command(name='r')
 async def roll_dice(ctx, *, arg):
@@ -89,12 +90,23 @@ async def roll_dice(ctx, *, arg):
             elif operators[i-1] == '-':
                 total -= sum(element)
         
-        out_str = str(evaluated_elements[0])
+        if len(evaluated_elements[0]) > 100:
+            out_str = ' [...]'
+        else:
+            out_str = ' ' + str(evaluated_elements[0])
+
         for i, element in enumerate(evaluated_elements[1:]):
             out_str += ' ' + operators[i]
-            out_str += ' ' + str(element)
+            if len(element) > 100:
+                out_str += ' [...]'
+            else:
+                out_str += ' ' + str(element)
 
-        await ctx.send(f'`{out_str} Total: {total}`')
+        out_str = f'{out_str} Total: {total}'
+        # messages = [out_str[x:x+MAX_MESSAGE_LEN-2] for x in range(0, len(out_str), MAX_MESSAGE_LEN-2)]
+        # for message in messages:
+        #     await ctx.send(f'`{message}`')
+        await ctx.send(f'`{out_str}`')
     except dice.DiceBaseException as e:
         await ctx.send(f'Error: {e}')
 
