@@ -2,6 +2,7 @@ import os
 import dice
 import re
 
+import aiohttp
 import discord
 from discord.ext import commands
 from dotenv import load_dotenv
@@ -17,7 +18,7 @@ bot = commands.Bot(command_prefix='!')
 
 @bot.event
 async def on_ready():
-    print(f'We have logged in as {bot.user.name}')
+    print(f'Logged in as {bot.user.name}')
 
 @bot.command(name='echo')
 async def echo(ctx, *, arg):
@@ -109,5 +110,24 @@ async def roll_dice(ctx, *, arg):
         await ctx.send(f'`{out_str}`')
     except dice.DiceBaseException as e:
         await ctx.send(f'Error: {e}')
+
+INSPIRO_REQUEST_URL = 'http://inspirobot.me/api?generate=true'
+INSIPRO_FAILURE_BACKUP = 'https://generated.inspirobot.me/a/LVPMd1mJXd.jpg'
+INSPIRO_IMAGE_URL_PREFIX = 'https://generated.inspirobot.me/a/'
+
+@bot.command(name='inspire')
+async def inspire(ctx):
+    image_url = None
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.get(INSPIRO_REQUEST_URL) as response:
+                image_url = await response.text()
+    except Exception as e:
+        print(e)
+            
+    if INSPIRO_IMAGE_URL_PREFIX in image_url:
+        await ctx.send(image_url)
+    else:
+        await ctx.send(f'Unknown error. Don\'t worry, I saved one for times like this! {INSIPRO_FAILURE_BACKUP}')
 
 bot.run(TOKEN)
