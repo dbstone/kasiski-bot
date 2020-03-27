@@ -32,8 +32,20 @@ async def server(ctx):
 @bot.command()
 async def play(ctx, url):
     if ctx.voice_client:
-        download_youtube.download(url, DOWNLOAD_PATH, ctx.guild)
-        ctx.voice_client.play(discord.FFmpegOpusAudio(f'{DOWNLOAD_PATH}/{ctx.guild}.webm'))
+        if url:
+            try:
+                await download_youtube.download(url, DOWNLOAD_PATH, ctx.guild)
+            except Exception as e:
+                await ctx.send(f'Error: {e}')
+                return
+            ctx.voice_client.play(
+                discord.FFmpegOpusAudio(f'{DOWNLOAD_PATH}/{ctx.guild}.webm'), 
+                after=lambda e: await ctx.voice_client.disconnect())
+        else:
+            if ctx.voice_client.is_paused():
+                ctx.voice_client.resume()
+            else:
+                ctx.send('Please provide a Youtube URL')
 
 @play.before_invoke
 async def ensure_voice(ctx):
@@ -41,11 +53,15 @@ async def ensure_voice(ctx):
         if ctx.author.voice:
             await ctx.author.voice.channel.connect()
         else:
-            await ctx.send('You are not connectd to a voice channel.')
+            await ctx.send('You are not connected to a voice channel')
     elif ctx.voice_client.is_playing():
         ctx.voice_client.stop()
         if ctx.voice_client.channel != ctx.author.voice.channel:
             await ctx.voice_client.move_to(ctx.author.voice.channel)
+
+@bot.command(aliases=['stop'])
+async def disconnect(ctx):
+    await ctx.voice_client.disconnect()
 
 @bot.command(aliases=['r'])
 async def roll(ctx, *, arg):

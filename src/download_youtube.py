@@ -1,18 +1,10 @@
 from pytube import YouTube 
 
-def download(url, path, filename):
-    try: 
-        yt = YouTube(url) 
-    except: 
-        print('Error connecting to Youtube')
+async def download(url, path, filename):
+    yt = YouTube(url) 
 
     best_audio_stream = yt.streams \
         .filter(only_audio=True) \
         .order_by('abr')[-1]
     
-    try: 
-        best_audio_stream.download(output_path=path, filename=f'{filename}')
-    except: 
-        print("Download error!") 
-
-    print('Download completed!') 
+    best_audio_stream.download(output_path=path, filename=f'{filename}')
