@@ -14,7 +14,7 @@ PRAC_SERVER = os.getenv('PRAC_SERVER')
 
 DOWNLOAD_PATH = 'downloads'
 
-bot = commands.Bot(command_prefix='!')
+bot = commands.Bot(command_prefix='.')
 
 @bot.event
 async def on_ready():
