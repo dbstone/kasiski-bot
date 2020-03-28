@@ -40,7 +40,7 @@ class Roll(commands.Cog):
             print(e)
         return numRolls
 
-    @commands.command(aliases=['r'])
+    @commands.command(aliases=['r'], help='Rolls dice', usage='[dice expression]')
     async def roll(self, ctx, *, arg):
         try:
             arg = arg.replace(' ', '') # Trim whitespace
@@ -90,7 +90,7 @@ class Roll(commands.Cog):
         
         self.stats_increment_num_rolls(ctx.author.id)
 
-    @commands.command()
+    @commands.command(help='Displays your personal dice-rolling stats')
     async def stats(self, ctx):
         num_rolls = self.stats_get_num_rolls(ctx.author.id)
         await ctx.send(f'You have rolled {num_rolls} times')

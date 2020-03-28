@@ -29,12 +29,12 @@ bot = commands.Bot(command_prefix='.')
 async def on_ready():
     print(f'Logged in as {bot.user.name}')
 
-@bot.command()
+@bot.command(aliases=['prac'], hidden=True)
 async def server(ctx):
     if ctx.message.channel.name == 'csgo':
         await ctx.send(PRAC_SERVER)
 
-@bot.command()
+@bot.command(help='Plays audio from a Youtube video', usage='<url>')
 async def play(ctx, *args):
     if ctx.voice_client:
         if args:
@@ -89,22 +89,22 @@ async def can_stop(ctx, is_pause):
     
     return True
 
-@bot.command()
+@bot.command(help='Pauses audio playback')
 async def pause(ctx):
     if await can_stop(ctx, True):
         ctx.voice_client.pause()
 
-@bot.command()
+@bot.command(help='Stops audio playback')
 async def stop(ctx):
     if await can_stop(ctx, False):
         ctx.voice_client.stop()
 
-@bot.command(aliases=['dc'])
+@bot.command(aliases=['dc'], help='Disconnects the bot from voice')
 async def disconnect(ctx):
     if ctx.voice_client:
         await ctx.voice_client.disconnect()
 
-@bot.command()
+@bot.command(help='Generates and displays an inspiring image')
 async def inspire(ctx):
     image_url = None
     try:
