@@ -30,22 +30,31 @@ async def server(ctx):
         await ctx.send(PRAC_SERVER)
 
 @bot.command()
-async def play(ctx, url):
+async def play(ctx, *args):
     if ctx.voice_client:
-        if url:
+        if args:
             try:
-                await download_youtube.download(url, DOWNLOAD_PATH, ctx.guild)
+                await download_youtube.download(args[0], DOWNLOAD_PATH, ctx.guild)
             except Exception as e:
                 await ctx.send(f'Error: {e}')
                 return
+            
+            source = discord.PCMVolumeTransformer(
+                discord.FFmpegPCMAudio(
+                    f'{DOWNLOAD_PATH}/{ctx.guild}.webm',
+                    options='-vn'
+                )
+            )
+        
             ctx.voice_client.play(
-                discord.FFmpegOpusAudio(f'{DOWNLOAD_PATH}/{ctx.guild}.webm'), 
-                after=lambda e: await ctx.voice_client.disconnect())
+                # discord.FFmpegOpusAudio(f'{DOWNLOAD_PATH}/{ctx.guild}.webm'), 
+                source,
+                after=lambda e: ctx.voice_client.stop())
         else:
             if ctx.voice_client.is_paused():
                 ctx.voice_client.resume()
             else:
-                ctx.send('Please provide a Youtube URL')
+                await ctx.send('You must provide a Youtube URL')
 
 @play.before_invoke
 async def ensure_voice(ctx):
@@ -59,9 +68,36 @@ async def ensure_voice(ctx):
         if ctx.voice_client.channel != ctx.author.voice.channel:
             await ctx.voice_client.move_to(ctx.author.voice.channel)
 
-@bot.command(aliases=['stop'])
+# prevent users from using stop and pause commands 
+# unless they are in the same voice channel as the bot
+async def can_stop(ctx, is_pause):
+    if (not ctx.voice_client or 
+        (not ctx.voice_client.is_playing() and 
+         (is_pause or 
+          not ctx.voice_client.is_paused()))):
+        await ctx.send('Not currently playing')
+        return False
+
+    if not ctx.author.voice or ctx.author.voice.channel != ctx.voice_client.channel:
+        await ctx.send('You must connect to the same voice channel as the bot before using this command')
+        return False
+    
+    return True
+
+@bot.command()
+async def pause(ctx):
+    if await can_stop(ctx, True):
+        ctx.voice_client.pause()
+
+@bot.command()
+async def stop(ctx):
+    if await can_stop(ctx, False):
+        ctx.voice_client.stop()
+
+@bot.command(aliases=['dc'])
 async def disconnect(ctx):
-    await ctx.voice_client.disconnect()
+    if ctx.voice_client:
+        await ctx.voice_client.disconnect()
 
 @bot.command(aliases=['r'])
 async def roll(ctx, *, arg):
