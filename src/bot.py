@@ -1,5 +1,6 @@
 import os
 import re
+import sqlite3
 import aiohttp
 import discord
 from discord.ext import commands
@@ -17,6 +18,36 @@ DOWNLOAD_PATH = 'downloads'
 INSPIRO_REQUEST_URL = 'http://inspirobot.me/api?generate=true'
 INSIPRO_FAILURE_BACKUP = 'https://generated.inspirobot.me/a/LVPMd1mJXd.jpg'
 INSPIRO_IMAGE_URL_PREFIX = 'https://generated.inspirobot.me/a/'
+
+stats = sqlite3.connect('stats.db')
+stats.execute(
+    '''CREATE TABLE IF NOT EXISTS stats
+        (userID int NOT NULL PRIMARY KEY, numRolls int)'''
+)
+
+def stats_ensure_user_exists(userID):
+    try:
+        with stats:
+            if not stats.execute('select exists(select * from stats where userID=?)', (userID,)).fetchone()[0]:
+                stats.execute('insert into stats(userID, numRolls) values(?, 0)', (userID,)) 
+    except Exception as e:
+        print(e)
+
+def stats_increment_num_rolls(userID):
+    try:
+        stats_ensure_user_exists(userID)
+        stats.execute('update stats set numRolls=numRolls+1 where userID=?', (userID,))
+    except Exception as e:
+        print(e)
+
+def stats_get_num_rolls(userID):
+    numRolls = 0
+    stats_ensure_user_exists(userID)
+    try:
+        numRolls = stats.execute('select numRolls from stats where userID=?', (userID,)).fetchone()[0]
+    except Exception as e:
+        print(e)
+    return numRolls
 
 bot = commands.Bot(command_prefix='.')
 
@@ -146,6 +177,13 @@ async def roll(ctx, *, arg):
         await ctx.send(f'`{out_str}`')
     except dice.DiceBaseException as e:
         await ctx.send(f'Error: {e}')
+    
+    stats_increment_num_rolls(ctx.author.id)
+
+@bot.command(name='stats')
+async def get_stats(ctx):
+    num_rolls = stats_get_num_rolls(ctx.author.id)
+    await ctx.send(f'You have rolled {num_rolls} times')
 
 @bot.command()
 async def inspire(ctx):

@@ -1,6 +1,7 @@
 /env
 /downloads
 src/__pycache__
+*.db
 
 # Discord token is in here. Don't push to a public repo!
-src/.env
+.env
