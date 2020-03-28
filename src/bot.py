@@ -1,53 +1,27 @@
+# built-in
 import os
-import re
-import sqlite3
-import aiohttp
+
+# third-party
 import discord
 from discord.ext import commands
 from dotenv import load_dotenv
+import aiohttp
 import download_youtube
 import dice
 
+# local
+import roll
+
+# init constants stored in .env file
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
 PRAC_SERVER = os.getenv('PRAC_SERVER')
 
 MAX_MESSAGE_LEN = 2000
-VALID_ROLL_OPERATORS = '+-'
 DOWNLOAD_PATH = 'downloads'
 INSPIRO_REQUEST_URL = 'http://inspirobot.me/api?generate=true'
 INSIPRO_FAILURE_BACKUP = 'https://generated.inspirobot.me/a/LVPMd1mJXd.jpg'
 INSPIRO_IMAGE_URL_PREFIX = 'https://generated.inspirobot.me/a/'
-
-stats = sqlite3.connect('stats.db')
-stats.execute(
-    '''CREATE TABLE IF NOT EXISTS stats
-        (userID int NOT NULL PRIMARY KEY, numRolls int)'''
-)
-
-def stats_ensure_user_exists(userID):
-    try:
-        with stats:
-            if not stats.execute('select exists(select * from stats where userID=?)', (userID,)).fetchone()[0]:
-                stats.execute('insert into stats(userID, numRolls) values(?, 0)', (userID,)) 
-    except Exception as e:
-        print(e)
-
-def stats_increment_num_rolls(userID):
-    try:
-        stats_ensure_user_exists(userID)
-        stats.execute('update stats set numRolls=numRolls+1 where userID=?', (userID,))
-    except Exception as e:
-        print(e)
-
-def stats_get_num_rolls(userID):
-    numRolls = 0
-    stats_ensure_user_exists(userID)
-    try:
-        numRolls = stats.execute('select numRolls from stats where userID=?', (userID,)).fetchone()[0]
-    except Exception as e:
-        print(e)
-    return numRolls
 
 bot = commands.Bot(command_prefix='.')
 
@@ -130,61 +104,6 @@ async def disconnect(ctx):
     if ctx.voice_client:
         await ctx.voice_client.disconnect()
 
-@bot.command(aliases=['r'])
-async def roll(ctx, *, arg):
-    try:
-        arg = arg.replace(' ', '') # Trim whitespace
-    
-        # collect operators
-        operators = ''
-        for c in arg:
-            if c in VALID_ROLL_OPERATORS:
-                operators += c
-        
-        elements = re.split('\+|\-', arg) # collect operands
-
-        evaluated_elements = []
-        for element in elements:
-            if element.isnumeric():
-                evaluated_elements.append([int(element)])
-            elif re.match('^\d*d?\d+$', element):
-                result = [int(i) for i in dice.roll(element)]
-                evaluated_elements.append(result)
-            else:
-                await ctx.send('`Malformed input`')
-                return
-        
-        total = 0
-        for i, element in enumerate(evaluated_elements):
-            if i == 0 or operators[i-1] == '+':
-                total += sum(element)
-            elif operators[i-1] == '-':
-                total -= sum(element)
-        
-        if len(evaluated_elements[0]) > 100:
-            out_str = '[...]'
-        else:
-            out_str = str(evaluated_elements[0])
-
-        for i, element in enumerate(evaluated_elements[1:]):
-            out_str += ' ' + operators[i]
-            if len(element) > 100:
-                out_str += ' [...]'
-            else:
-                out_str += ' ' + str(element)
-
-        out_str = f'{out_str} Total: {total}'
-        await ctx.send(f'`{out_str}`')
-    except dice.DiceBaseException as e:
-        await ctx.send(f'Error: {e}')
-    
-    stats_increment_num_rolls(ctx.author.id)
-
-@bot.command(name='stats')
-async def get_stats(ctx):
-    num_rolls = stats_get_num_rolls(ctx.author.id)
-    await ctx.send(f'You have rolled {num_rolls} times')
-
 @bot.command()
 async def inspire(ctx):
     image_url = None
@@ -200,4 +119,5 @@ async def inspire(ctx):
     else:
         await ctx.send(f'Unknown error. Don\'t worry, I saved one for times like this! {INSIPRO_FAILURE_BACKUP}')
 
+bot.add_cog(roll.Roll())
 bot.run(TOKEN)
