@@ -213,9 +213,11 @@ class Roll(commands.Cog):
     async def attackmacro(self, ctx, alias, hit_mod, damage_roll):
         if not re.match('^\d+$', hit_mod):
             await ctx.send(f'Error: `Hit modifier malformed. Integer values only.`')
+            return
 
         if not re.match('^\d*d\d+([\+\-]\d+)?$', damage_roll):
             await ctx.send(f'Error: `Damage roll malformed. Must be in form NdX+M, e.g. \'2d6+3\'`')
+            return
 
         dmg_roll = ''
         dmg_mod = 0
