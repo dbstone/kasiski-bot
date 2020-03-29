@@ -11,9 +11,15 @@ VALID_ROLL_OPERATORS = '+-'
 class Roll(commands.Cog):
     def __init__(self):
         self.db = sqlite3.connect('roll.db')
+        
         self.db.execute(
             '''CREATE TABLE IF NOT EXISTS stats
                 (userID int NOT NULL PRIMARY KEY, numRolls int)'''
+        )
+        
+        self.db.execute(
+            '''CREATE TABLE IF NOT EXISTS macros
+                (userID int NOT NULL, alias text NOT NULL, roll text NOT NULL)'''
         )
 
     def stats_ensure_user_exists(self, userID):
@@ -41,8 +47,34 @@ class Roll(commands.Cog):
             print(e)
         return numRolls
 
-    @commands.command(aliases=['r'], help='Rolls dice', usage='[dice expression]')
+    def create_macro(self, userID, alias, roll):
+        try:
+            with self.db:
+                if self.db.execute('select exists(select * from macros where userID=? and alias=?)', (userID, alias)).fetchone()[0]:
+                    self.db.execute('update macros set roll=? where userID=? and alias=?', (roll, userID, alias))
+                else:
+                    self.db.execute('insert into macros(userID, alias, roll) values(?, ?, ?)', (userID, alias, roll)) 
+        except Exception as e:
+            print(e)
+
+    def get_macro(self, userID, alias):
+        try:
+            with self.db:
+                roll = self.db.execute('select roll from macros where userID=? and alias=?', (userID, alias)).fetchone()
+                if roll:
+                    return roll[0]
+                else:
+                    return None
+        except Exception as e:
+            print(e)
+
+    @commands.command(aliases=['r'], help='Rolls dice', usage='[dice expression] | <macro>')
     async def roll(self, ctx, *, arg):
+        # handle macros
+        macro = self.get_macro(ctx.author.id, arg)
+        if macro:
+            arg = macro
+
         try:
             arg = arg.replace(' ', '') # Trim whitespace
         
@@ -96,3 +128,7 @@ class Roll(commands.Cog):
         num_rolls = self.stats_get_num_rolls(ctx.author.id)
         await ctx.send(f'You have rolled {num_rolls} times')
 
+    @commands.command(help='Create a personal roll macro', usage='<alias> <roll>')
+    async def rollmacro(self, ctx, alias, roll):
+        self.create_macro(ctx.author.id, alias, roll)
+        await ctx.send(f'Roll macro set. Usage: `.roll {alias}`')
