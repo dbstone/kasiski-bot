@@ -76,6 +76,13 @@ class Roll(commands.Cog):
                 return None
         except Exception as e:
             print(e)
+
+    def remove_macro(self, userID, alias):
+        try:
+            with self.db:
+                self.db.execute('delete from macros where userID=? and alias=?', (userID, alias))
+        except Exception as e:
+            print(e)
     
     def create_attack_macro(self, userID, alias, hit_mod, dmg_die, num_dmg_dice, dmg_mod):
         try:
@@ -83,7 +90,7 @@ class Roll(commands.Cog):
                 if self.db.execute('select exists(select * from attacks where userID=? and alias=?)', (userID, alias)).fetchone()[0]:
                     self.db.execute(
                         'update attacks set hitMod=?, dmgDie=?, numDmgDice=?, dmgMod=? where userID=? and alias=?', 
-                        (hit_mod, dmg_die, num_dmg_dice, dmg_mod)
+                        (hit_mod, dmg_die, num_dmg_dice, dmg_mod, userID, alias)
                     )
                 else:
                     self.db.execute(
@@ -95,7 +102,10 @@ class Roll(commands.Cog):
     
     def get_attack_macro(self, userID, alias):
         try:
-            return self.db.execute('select roll from macros where userID=? and alias=?', (userID, alias)).fetchone()
+            return self.db.execute(
+                'select hitMod, dmgDie, numDmgDice, dmgMod from attacks where userID=? and alias=?', 
+                (userID, alias)
+            ).fetchone()
         except Exception as e:
             print(e)
 
@@ -103,9 +113,9 @@ class Roll(commands.Cog):
         try:
             hit = dice.roll('d20')
 
-            critical = hit == 20
+            critical = hit[0] == 20
             
-            hit_result = f'`{hit} + {hit_mod} Total: {hit+hit_mod}`'
+            hit_result = f'`{hit} + [{hit_mod}] Total: {hit[0]+hit_mod}`'
             
             if critical:
                 num_dmg_dice *= 2
@@ -117,9 +127,9 @@ class Roll(commands.Cog):
                 dmg_roll += '+'
             dmg_roll += str(dmg_mod)
 
-            dmg_result = self.handle_roll(dmg_roll)
+            dmg_result = await self.handle_roll(dmg_roll)
 
-            return f'Hit: {hit_result} Damage: {dmg_result}'
+            return f':crossed_swords: Hit: {hit_result}\n:drop_of_blood: Damage: {dmg_result}'
 
         except dice.DiceBaseException as e:
             return f'Error: {e}'
@@ -181,10 +191,10 @@ class Roll(commands.Cog):
         else:
             attack_macro = self.get_attack_macro(ctx.author.id, arg)
             if attack_macro:
-                result = self.handle_attack_macro(ctx, *attack_macro)
+                result = await self.handle_attack_macro(ctx, *attack_macro)
 
         if not result:
-            result = handle_roll(arg)
+            result = await self.handle_roll(arg)
 
         self.stats_increment_num_rolls(ctx.author.id)
         await ctx.send(result)
@@ -201,4 +211,29 @@ class Roll(commands.Cog):
     
     @commands.command(help='Creates a personal roll macro for a D&D 5e attack', usage='<alias> <hit modifier> <damage roll>')
     async def attackmacro(self, ctx, alias, hit_mod, damage_roll):
-        await ctx.send(f'Roll macro set. Usage: `.roll {alias}`')
+        if not re.match('^\d+$', hit_mod):
+            await ctx.send(f'Error: `Hit modifier malformed. Integer values only.`')
+
+        if not re.match('^\d*d\d+([\+\-]\d+)?$', damage_roll):
+            await ctx.send(f'Error: `Damage roll malformed. Must be in form NdX+M, e.g. \'2d6+3\'`')
+
+        dmg_roll = ''
+        dmg_mod = 0
+
+        if '+' in damage_roll:
+            dmg_roll, dmg_mod = damage_roll.split('+')
+            dmg_mod = int(dmg_mod)
+        elif '-' in dmg_roll:
+            dmg_roll, dmg_mod = damage_roll.split('-')
+            dmg_mod = int(dmg_mod) * -1
+        else:
+            dmg_roll = damage_roll
+        
+        num_dmg_dice, dmg_die = dmg_roll.split('d')
+
+        dmg_die = int(dmg_die)
+        num_dmg_dice = int(num_dmg_dice)
+
+        self.remove_macro(ctx.author.id, alias)
+        self.create_attack_macro(ctx.author.id, alias, int(hit_mod), dmg_die, num_dmg_dice, dmg_mod)
+        await ctx.send(f'Attack macro set. Usage: `.roll {alias}`')
