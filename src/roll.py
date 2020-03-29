@@ -125,7 +125,7 @@ class Roll(commands.Cog):
                 dmg_roll += '-'
             else:
                 dmg_roll += '+'
-            dmg_roll += str(dmg_mod)
+            dmg_roll += str(abs(dmg_mod))
 
             dmg_result = await self.handle_roll(dmg_roll)
 
@@ -223,7 +223,7 @@ class Roll(commands.Cog):
         if '+' in damage_roll:
             dmg_roll, dmg_mod = damage_roll.split('+')
             dmg_mod = int(dmg_mod)
-        elif '-' in dmg_roll:
+        elif '-' in damage_roll:
             dmg_roll, dmg_mod = damage_roll.split('-')
             dmg_mod = int(dmg_mod) * -1
         else:
@@ -232,7 +232,7 @@ class Roll(commands.Cog):
         num_dmg_dice, dmg_die = dmg_roll.split('d')
 
         dmg_die = int(dmg_die)
-        num_dmg_dice = int(num_dmg_dice)
+        num_dmg_dice = int(num_dmg_dice) if num_dmg_dice else 1
 
         self.remove_macro(ctx.author.id, alias)
         self.create_attack_macro(ctx.author.id, alias, int(hit_mod), dmg_die, num_dmg_dice, dmg_mod)
