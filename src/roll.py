@@ -27,7 +27,8 @@ class Roll(commands.Cog):
     def stats_increment_num_rolls(self, userID):
         try:
             self.stats_ensure_user_exists(userID)
-            self.db.execute('update stats set numRolls=numRolls+1 where userID=?', (userID,))
+            with self.db:
+                self.db.execute('update stats set numRolls=numRolls+1 where userID=?', (userID,))
         except Exception as e:
             print(e)
 
