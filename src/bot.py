@@ -4,6 +4,7 @@ import os
 # third-party
 from discord.ext import commands
 from dotenv import load_dotenv
+import aiohttp
 
 # local
 import roll

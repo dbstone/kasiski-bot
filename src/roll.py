@@ -211,10 +211,13 @@ class Roll(commands.Cog):
     
     @commands.command(help='Creates a personal roll macro for a D&D 5e attack', usage='<alias> <hit modifier> <damage roll>')
     async def attackmacro(self, ctx, alias, hit_mod, damage_roll):
+
+        # TODO: handle +/- before hit modifier
         if not re.match('^\d+$', hit_mod):
             await ctx.send(f'Error: `Hit modifier malformed. Integer values only.`')
             return
 
+        # TODO: handle damage expression with spaces
         if not re.match('^\d*d\d+([\+\-]\d+)?$', damage_roll):
             await ctx.send(f'Error: `Damage roll malformed. Must be in form NdX+M, e.g. \'2d6+3\'`')
             return
